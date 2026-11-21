@@ -1,0 +1,14 @@
+{
+  "name": "memory-decay",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tailwindcss -i ./input.css -o ./app.css --minify --watch",
+    "test": "npm run build && test -s ./app.css"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.7.0",
+    "postcss": "^8.5.33",
+    "tailwindcss": "^3.4.19"
+  }
+}
