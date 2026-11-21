@@ -13,9 +13,8 @@ framework.
 - `app.css`: compiled Tailwind output. Never edit this file by hand.
 - `tailwind.config.js`: theme configuration for paper, ink, muted, line, soft,
   sage, sage-dark, `shadow-app`, and the Georgia display font.
-- `javascripts/logic.js`: pure engine for scoring, scheduling, memory states,
-  time calculations, and storage. It must not access the DOM.
-- `javascripts/main.js`: DOM rendering, views, dialogs, events, and toasts.
+- `src/scripts/`: shared static UI scripts and components.
+- `src/pages/`: static application pages.
 - `references/`: read-only reference containing the old prototype
   (`index.html`, `app.js`, `logic.js`, and `style.css`). It is gitignored.
 
