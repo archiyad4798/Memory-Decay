@@ -110,6 +110,66 @@
         return dialog;
     }
 
+    function setupKeywordChips(form, input, initialKeywords, onChange) {
+        const list = form.querySelector('[data-keyword-chips]');
+        const keywords = [];
+        const addKeywords = values => {
+            values.map(value => value.trim()).filter(Boolean).forEach(value => {
+                if (!keywords.some(keyword => keyword.toLocaleLowerCase() === value.toLocaleLowerCase())) keywords.push(value);
+            });
+        };
+        addKeywords(initialKeywords);
+
+        const render = () => {
+            list.replaceChildren();
+            keywords.forEach((keyword, index) => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'inline-flex items-center gap-1 rounded-full bg-[#edf0eb] px-2.5 py-1 text-xs text-ink hover:bg-soft';
+                chip.dataset.keywordIndex = String(index);
+                chip.setAttribute('aria-label', `Remove keyword ${keyword}`);
+                chip.textContent = `${keyword} ×`;
+                list.append(chip);
+            });
+        };
+        const commitInput = () => {
+            addKeywords(input.value.split(','));
+            input.value = '';
+            render();
+            onChange();
+        };
+
+        list.addEventListener('click', event => {
+            const chip = event.target.closest('[data-keyword-index]');
+            if (!chip) return;
+            keywords.splice(Number(chip.dataset.keywordIndex), 1);
+            render();
+            onChange();
+            input.focus();
+        });
+        input.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ',') {
+                event.preventDefault();
+                if (input.value.trim()) commitInput();
+            } else if (event.key === 'Backspace' && !input.value && keywords.length) {
+                keywords.pop();
+                render();
+                onChange();
+            }
+        });
+        input.addEventListener('input', () => {
+            if (input.value.includes(',')) {
+                const values = input.value.split(',');
+                input.value = values.pop();
+                addKeywords(values);
+                render();
+            }
+            onChange();
+        });
+        render();
+        return { values: () => [...keywords] };
+    }
+
     function openAddConcept() {
         const dialog = openDialog(
             'Add a concept',
@@ -124,7 +184,8 @@
                     <span data-material-error class="text-xs font-normal text-[#87554e]" aria-live="polite"></span>
                 </label>
                 <label class="grid gap-1.5 text-xs font-bold" for="concept-keywords">Keywords
-                    <input id="concept-keywords" name="keywords" required placeholder="closures, scope, lexical environment" class="rounded-[10px] border border-line bg-white px-3 py-3 text-sm font-normal outline-none focus:border-sage focus:ring-4 focus:ring-sage/15" />
+                    <div data-keyword-chips class="flex flex-wrap gap-1.5" aria-live="polite"></div>
+                    <input id="concept-keywords" name="keywords" placeholder="Type a keyword, then press Enter" class="rounded-[10px] border border-line bg-white px-3 py-3 text-sm font-normal outline-none focus:border-sage focus:ring-4 focus:ring-sage/15" />
                     <span data-keyword-error class="text-xs font-normal text-[#87554e]" aria-live="polite"></span>
                 </label>
                 <div class="mt-1 flex justify-end gap-2">
@@ -139,11 +200,13 @@
         const material = form.querySelector('#concept-material');
         const keywords = form.querySelector('#concept-keywords');
         const submit = form.querySelector('[data-save-concept]');
+        let validate = () => false;
+        const keywordChips = setupKeywordChips(form, keywords, [], () => validate(false));
 
-        function validate(showErrors = false) {
+        validate = (showErrors = false) => {
             const titleValid = title.value.trim().length >= 3;
             const materialValid = material.value.trim().length >= 10;
-            const keywordsValid = keywords.value.split(',').some(value => value.trim());
+            const keywordsValid = keywordChips.values().length > 0;
             if (showErrors) {
                 form.querySelector('[data-title-error]').textContent = titleValid ? '' : 'Enter a title with at least 3 characters.';
                 form.querySelector('[data-material-error]').textContent = materialValid ? '' : 'Enter at least 10 characters of material.';
@@ -154,8 +217,8 @@
             }
             submit.disabled = !(titleValid && materialValid && keywordsValid);
             return titleValid && materialValid && keywordsValid;
-        }
-        [title, material, keywords].forEach(input => {
+        };
+        [title, material].forEach(input => {
             input.addEventListener('input', () => validate(false));
             input.addEventListener('blur', () => validate(true));
         });
@@ -178,7 +241,7 @@
             storage.addConcept({
                 title: title.value.trim(),
                 raw: material.value.trim(),
-                keywords: keywords.value.split(',').map(keyword => keyword.trim()).filter(Boolean),
+                keywords: keywordChips.values(),
                 createdAt: now,
                 decayRate: 0.3,
                 nextReviewAt: now,
@@ -210,7 +273,8 @@
                     <span data-edit-material-error class="text-xs font-normal text-[#87554e]" aria-live="polite"></span>
                 </label>
                 <label class="grid gap-1.5 text-xs font-bold" for="edit-keywords">Keywords
-                    <input id="edit-keywords" required value="${escapeHtml(concept.keywords.join(', '))}" class="rounded-[10px] border border-line bg-white px-3 py-3 text-sm font-normal outline-none focus:border-sage focus:ring-4 focus:ring-sage/15" />
+                    <div data-keyword-chips class="flex flex-wrap gap-1.5" aria-live="polite"></div>
+                    <input id="edit-keywords" placeholder="Type a keyword, then press Enter" class="rounded-[10px] border border-line bg-white px-3 py-3 text-sm font-normal outline-none focus:border-sage focus:ring-4 focus:ring-sage/15" />
                     <span data-edit-keyword-error class="text-xs font-normal text-[#87554e]" aria-live="polite"></span>
                 </label>
                 <div class="mt-1 flex justify-end gap-2">
@@ -225,11 +289,13 @@
         const material = form.querySelector('#edit-material');
         const keywords = form.querySelector('#edit-keywords');
         const submit = form.querySelector('[data-edit-submit]');
+        let validate = () => false;
+        const keywordChips = setupKeywordChips(form, keywords, concept.keywords, () => validate(false));
 
-        function validate(showErrors = false) {
+        validate = (showErrors = false) => {
             const titleValid = title.value.trim().length >= 3;
             const materialValid = material.value.trim().length >= 10;
-            const keywordValid = keywords.value.split(',').some(keyword => keyword.trim());
+            const keywordValid = keywordChips.values().length > 0;
             if (showErrors) {
                 form.querySelector('[data-edit-title-error]').textContent = titleValid ? '' : 'Enter a title with at least 3 characters.';
                 form.querySelector('[data-edit-material-error]').textContent = materialValid ? '' : 'Enter at least 10 characters of material.';
@@ -237,8 +303,8 @@
             }
             submit.disabled = !(titleValid && materialValid && keywordValid);
             return titleValid && materialValid && keywordValid;
-        }
-        [title, material, keywords].forEach(input => {
+        };
+        [title, material].forEach(input => {
             input.addEventListener('input', () => validate(false));
             input.addEventListener('blur', () => validate(true));
         });
@@ -255,7 +321,7 @@
                 ...concept,
                 title: title.value.trim(),
                 raw: material.value.trim(),
-                keywords: keywords.value.split(',').map(keyword => keyword.trim()).filter(Boolean)
+                keywords: keywordChips.values()
             }).then(() => {
                 closeDialog(dialog);
                 showToast('Concept updated successfully.');
