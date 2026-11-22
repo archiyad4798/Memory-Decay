@@ -366,21 +366,27 @@
                 if (!tests.length) {
                     chart.innerHTML = `<div class="grid h-[280px] place-items-center text-center"><div><p class="font-display text-xl">No retention history</p><p class="mt-1 text-sm text-muted">Complete a recall test to begin charting retention.</p></div></div>`;
                 } else {
-                    const history = engine.retentionHistory(60, tests, now);
-                    const buckets = [];
-                    for (let index = 0; index < history.length; index += 10) {
-                        const chunk = history.slice(index, index + 10).filter(item => item.count);
-                        buckets.push(chunk.length ? Math.round(chunk.reduce((sum, item) => sum + item.average, 0) / chunk.length) : 0);
-                    }
-                    while (buckets.length < 6) buckets.unshift(0);
-                    const chartPoints = buckets.slice(-6).map((score, index) => `${22 + index * 171},${220 - score * 1.9}`).join(' ');
+                    const points = engine.retentionHistory(60, tests, now).filter(item => item.count);
+                    const plot = { left: 58, right: 884, top: 24, bottom: 220 };
+                    const width = plot.right - plot.left;
+                    const height = plot.bottom - plot.top;
+                    const xFor = (item, index) => points.length === 1
+                        ? (plot.left + width / 2)
+                        : (plot.left + index * (width / (points.length - 1)));
+                    const yFor = score => plot.bottom - ((Math.max(0, Math.min(100, score)) / 100) * height);
+                    const chartPoints = points.map((item, index) => `${xFor(item, index)},${yFor(item.average)}`).join(' ');
+                    const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
+                    const labelStep = Math.max(1, Math.ceil(points.length / 6));
+                    const dateLabels = points.filter((item, index) => index % labelStep === 0 || index === points.length - 1);
                     chart.innerHTML = `
-                        <svg viewBox="0 0 900 280" role="img" aria-label="Average retention trend" class="h-[280px] w-full overflow-visible">
-                            <g stroke="#e4e7e1"><line x1="8" y1="220" x2="892" y2="220"/><line x1="8" y1="158" x2="892" y2="158"/><line x1="8" y1="96" x2="892" y2="96"/><line x1="8" y1="34" x2="892" y2="34"/></g>
-                            <polyline points="${chartPoints}" fill="none" stroke="#53665a" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
-                            ${buckets.slice(-6).map((score, index) => `<circle cx="${22 + index * 171}" cy="${220 - score * 1.9}" r="4.5" fill="#fbfaf5" stroke="#53665a" stroke-width="2"/>`).join('')}
+                        <svg viewBox="0 0 900 280" role="img" aria-label="Average retention trend with ${points.length} recorded day${points.length === 1 ? '' : 's'}" class="h-[280px] w-full overflow-visible">
+                            <g stroke="#e4e7e1"><line x1="${plot.left}" y1="${plot.bottom}" x2="${plot.right}" y2="${plot.bottom}"/><line x1="${plot.left}" y1="${plot.bottom - height * .25}" x2="${plot.right}" y2="${plot.bottom - height * .25}"/><line x1="${plot.left}" y1="${plot.bottom - height * .5}" x2="${plot.right}" y2="${plot.bottom - height * .5}"/><line x1="${plot.left}" y1="${plot.bottom - height * .75}" x2="${plot.right}" y2="${plot.bottom - height * .75}"/><line x1="${plot.left}" y1="${plot.top}" x2="${plot.right}" y2="${plot.top}"/></g>
+                            <g fill="#858e88" font-family="system-ui, sans-serif" font-size="11" text-anchor="end"><text x="50" y="${plot.bottom + 4}">0%</text><text x="50" y="${plot.bottom - height * .25 + 4}">25%</text><text x="50" y="${plot.bottom - height * .5 + 4}">50%</text><text x="50" y="${plot.bottom - height * .75 + 4}">75%</text><text x="50" y="${plot.top + 4}">100%</text></g>
+                            ${points.length > 1 ? `<polyline points="${chartPoints}" fill="none" stroke="#53665a" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>` : ''}
+                            ${points.map((item, index) => `<circle cx="${xFor(item, index)}" cy="${yFor(item.average)}" r="4.5" fill="#fbfaf5" stroke="#53665a" stroke-width="2"/>`).join('')}
+                            <g fill="#858e88" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">${dateLabels.map(item => { const index = points.indexOf(item); return `<text x="${xFor(item, index)}" y="258">${dateFormatter.format(item.at)}</text>`; }).join('')}</g>
                         </svg>
-                        <div class="flex justify-between px-3 text-[11px] text-[#8a928d]"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>`;
+                        <p class="mt-1 text-center text-[11px] text-[#8a928d]">Recorded review days</p>`;
                 }
             }
         } catch (error) {
