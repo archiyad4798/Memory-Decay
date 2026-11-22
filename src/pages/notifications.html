@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memory Decay — Notifications</title><link rel="stylesheet" href="../../app.css" />
+</head>
+<body data-active="none" data-root="../.." class="h-screen overflow-hidden bg-paper font-sans text-ink">
+    <div class="grid h-screen min-h-0 w-screen grid-rows-[86px_minmax(0,1fr)] overflow-hidden">
+        <div id="shared-header"></div>
+        <div class="grid min-h-0 grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
+            <div id="shared-sidebar"></div>
+            <main class="min-h-0 overflow-y-auto p-[18px] sm:p-7">
+                <div class="max-w-3xl">
+                    <p class="text-[11px] font-bold uppercase tracking-[1.5px] text-[#8a928c]">Workspace</p>
+                    <h1 class="mt-1 font-display text-3xl">Notifications</h1>
+                    <div class="mt-6 grid gap-3">
+                        <a href="concept.html" class="rounded-2xl border border-line bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#b7c4b5]"><div class="flex items-start justify-between gap-4"><div><p class="text-sm font-semibold">Photosynthesis is ready for review</p><p class="mt-1 text-sm text-muted">Your next recall check is available today.</p></div><span class="mt-1 size-2 shrink-0 rounded-full bg-sage"></span></div></a>
+                        <a href="concept.html" class="rounded-2xl border border-line bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#b7c4b5]"><div class="flex items-start justify-between gap-4"><div><p class="text-sm font-semibold">French vocabulary needs reinforcement</p><p class="mt-1 text-sm text-muted">A scheduled recall check is waiting.</p></div><span class="mt-1 size-2 shrink-0 rounded-full bg-sage"></span></div></a>
+                        <div class="rounded-2xl border border-line bg-white p-5"><p class="text-sm font-semibold">Weekly review complete</p><p class="mt-1 text-sm text-muted">Your average retention was 56% this week.</p></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <div id="shared-floating-ui"></div><script src="../../src/scripts/components.js"></script>
+</body>
+</html>

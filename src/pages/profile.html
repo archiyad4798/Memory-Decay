@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memory Decay — Profile</title><link rel="stylesheet" href="../../app.css" />
+</head>
+<body data-active="none" data-root="../.." class="h-screen overflow-hidden bg-paper font-sans text-ink">
+    <div class="grid h-screen min-h-0 w-screen grid-rows-[86px_minmax(0,1fr)] overflow-hidden">
+        <div id="shared-header"></div>
+        <div class="grid min-h-0 grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
+            <div id="shared-sidebar"></div>
+            <main class="min-h-0 overflow-y-auto p-[18px] sm:p-7">
+                <div class="max-w-2xl">
+                    <p class="text-[11px] font-bold uppercase tracking-[1.5px] text-[#8a928c]">Workspace</p>
+                    <h1 class="mt-1 font-display text-3xl">Profile</h1>
+                    <section class="mt-6 rounded-2xl border border-line bg-white p-6">
+                        <div class="flex items-center gap-4"><div class="grid size-14 place-items-center rounded-full border-[1.5px] border-ink font-display text-xl">MD</div><div><h2 class="font-display text-xl">Memory learner</h2><p class="mt-1 text-sm text-muted">Local workspace</p></div></div>
+                        <div class="mt-6 grid gap-3 border-t border-[#eef0ec] pt-5 sm:grid-cols-3"><div><b class="font-display text-2xl">3</b><p class="mt-1 text-xs text-muted">Concepts</p></div><div><b class="font-display text-2xl">11</b><p class="mt-1 text-xs text-muted">Reviews</p></div><div><b class="font-display text-2xl">56%</b><p class="mt-1 text-xs text-muted">Retention</p></div></div>
+                    </section>
+                    <a href="settings.html" class="mt-4 inline-flex rounded-[10px] border border-line bg-white px-4 py-2.5 text-sm font-medium">Open settings</a>
+                </div>
+            </main>
+        </div>
+    </div>
+    <div id="shared-floating-ui"></div><script src="../../src/scripts/components.js"></script>
+</body>
+</html>
