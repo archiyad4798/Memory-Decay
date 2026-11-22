@@ -4,7 +4,7 @@
     <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Memory Decay — Settings</title><link rel="stylesheet" href="../../app.css" />
 </head>
-<body data-active="settings" data-root="../.." class="h-screen overflow-hidden bg-paper font-sans text-ink">
+<body data-active="settings" data-root="../.." data-page="settings" class="h-screen overflow-hidden bg-paper font-sans text-ink">
     <div class="grid h-screen min-h-0 w-screen grid-rows-[86px_minmax(0,1fr)] overflow-hidden">
         <div id="shared-header"></div>
         <div class="grid min-h-0 grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
@@ -18,13 +18,17 @@
                         <div class="mt-5 grid gap-4">
                             <label class="flex items-center justify-between gap-4 border-b border-[#eef0ec] pb-4 text-sm"><span><b class="block">Daily reminders</b><small class="mt-1 block text-muted">Notify when concepts are due</small></span><input type="checkbox" checked class="size-4 accent-[#405447]" /></label>
                             <label class="flex items-center justify-between gap-4 border-b border-[#eef0ec] pb-4 text-sm"><span><b class="block">Show recall hints</b><small class="mt-1 block text-muted">Display keywords after a missed recall</small></span><input type="checkbox" class="size-4 accent-[#405447]" /></label>
-                            <label class="flex items-center justify-between gap-4 text-sm"><span><b class="block">Demo clock</b><small class="mt-1 block text-muted">Fast-forward time for testing</small></span><button class="rounded-[10px] border border-line px-3 py-2">+1 day</button></label>
+                            <label class="flex items-center justify-between gap-4 border-b border-[#eef0ec] pb-4 text-sm"><span><b class="block">Demo mode</b><small class="mt-1 block text-muted">Enable a fast-forward clock for testing</small></span><input data-demo-toggle type="checkbox" role="switch" class="size-4 accent-[#405447]" /></label>
+                            <div class="flex flex-wrap justify-between gap-3 text-sm"><div><b class="block">Backup</b><small class="mt-1 block text-muted">Export or import workspace data</small></div><div class="flex gap-2"><button type="button" data-export class="rounded-[10px] border border-line px-3 py-2">Export</button><button type="button" data-import class="rounded-[10px] border border-line px-3 py-2">Import</button></div></div>
+                            <div class="flex items-center justify-between gap-4 pt-1 text-sm"><span><b class="block text-[#87554e]">Reset workspace</b><small class="mt-1 block text-muted">Remove concepts and review history</small></span><button type="button" data-reset class="rounded-[10px] border border-[#e2b8b1] px-3 py-2 text-[#87554e]">Reset</button></div>
                         </div>
                     </section>
                 </div>
             </main>
         </div>
     </div>
-    <div id="shared-floating-ui"></div><script src="../../src/scripts/components.js"></script>
+    <div id="shared-floating-ui"></div>
+    <script src="../../javascripts/logic.js"></script>
+    <script src="../../javascripts/main.js"></script>
 </body>
 </html>
