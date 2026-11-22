@@ -24,22 +24,11 @@
                                 class="flex items-center justify-between border-b border-dashed border-[#d9ddd7] px-[18px] py-[13px] pl-[22px]">
                                 <h1 class="font-display text-[19px]">Upcoming Due <span
                                         class="text-[#758078]">›</span></h1>
-                                <a href="src/pages/add-concept.html" aria-label="Add concept"
-                                    class="grid size-[38px] place-items-center rounded-[11px] border border-line bg-white text-lg transition hover:bg-soft">+</a>
+                                <button type="button" data-popup="add" aria-label="Add concept"
+                                    class="grid size-[38px] place-items-center rounded-[11px] border border-line bg-white text-lg transition hover:bg-soft">+</button>
                             </div>
-                            <div class="p-[18px] pl-[22px]">
-                                <a href="src/pages/concept.html"
-                                    class="flex w-full items-center justify-between border-b border-[#eef0ec] py-2.5 text-left">
-                                    <span><strong class="block text-[13px]">Photosynthesis</strong><span
-                                            class="mt-0.5 block text-[11px] text-[#8a928d]">Review today</span></span>
-                                    <span class="text-xs text-sage-dark">58% ›</span>
-                                </a>
-                                <a href="src/pages/concept.html"
-                                    class="flex w-full items-center justify-between py-2.5 text-left">
-                                    <span><strong class="block text-[13px]">French vocabulary</strong><span
-                                            class="mt-0.5 block text-[11px] text-[#8a928d]">Review today</span></span>
-                                    <span class="text-xs text-sage-dark">34% ›</span>
-                                </a>
+                            <div id="dashboard-due" class="p-[18px] pl-[22px]">
+                                <div class="py-3 text-sm text-muted">Loading concepts…</div>
                             </div>
                         </section>
 
@@ -51,33 +40,33 @@
                                         class="text-[#758078]">›</span></h2>
                                 <span class="text-xs text-[#89918c]">Today</span>
                             </div>
-                            <div class="grid gap-[11px] p-[18px] pl-[22px]">
+                            <div id="dashboard-status" class="grid gap-[11px] p-[18px] pl-[22px]">
                                 <div class="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <div>
                                         <p class="text-[13px] font-semibold">Concepts tracked</p>
                                         <div class="mt-1.5 h-[7px] overflow-hidden rounded-full bg-[#edf0eb]">
-                                            <div class="h-full w-[60%] rounded-full bg-sage"></div>
+                                            <div class="h-full w-0 rounded-full bg-sage"></div>
                                         </div>
                                     </div>
-                                    <span class="text-xs text-muted">3</span>
+                                    <span class="text-xs text-muted">0</span>
                                 </div>
                                 <div class="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <div>
                                         <p class="text-[13px] font-semibold">Reviews completed</p>
                                         <div class="mt-1.5 h-[7px] overflow-hidden rounded-full bg-[#edf0eb]">
-                                            <div class="h-full w-[110%] rounded-full bg-sage"></div>
+                                            <div class="h-full w-0 rounded-full bg-sage"></div>
                                         </div>
                                     </div>
-                                    <span class="text-xs text-muted">11</span>
+                                    <span class="text-xs text-muted">0</span>
                                 </div>
                                 <div class="grid grid-cols-[1fr_auto] items-center gap-3">
                                     <div>
                                         <p class="text-[13px] font-semibold">Average retention</p>
                                         <div class="mt-1.5 h-[7px] overflow-hidden rounded-full bg-[#edf0eb]">
-                                            <div class="h-full w-[56%] rounded-full bg-sage"></div>
+                                            <div class="h-full w-0 rounded-full bg-sage"></div>
                                         </div>
                                     </div>
-                                    <span class="text-xs text-muted">56%</span>
+                                    <span class="text-xs text-muted">0%</span>
                                 </div>
                             </div>
                         </section>
@@ -91,38 +80,12 @@
                                     class="text-[#758078]">›</span></h2>
                             <span class="text-xs text-[#89918c]">last 60 days</span>
                         </div>
-                        <div class="px-[18px] pb-4 pt-1 sm:px-[22px]">
-                            <svg viewBox="0 0 900 280" role="img" aria-label="Average retention trend"
-                                class="h-[280px] w-full overflow-visible">
-                                <g stroke="#e4e7e1">
-                                    <line x1="8" y1="220" x2="892" y2="220" />
-                                    <line x1="8" y1="158" x2="892" y2="158" />
-                                    <line x1="8" y1="96" x2="892" y2="96" />
-                                    <line x1="8" y1="34" x2="892" y2="34" />
-                                </g>
-                                <polyline points="22,88 193,97 364,106 535,114 706,119 877,128" fill="none"
-                                    stroke="#53665a" stroke-linecap="round" stroke-linejoin="round"
-                                    stroke-width="2.5" />
-                                <g fill="#fbfaf5" stroke="#53665a" stroke-width="2">
-                                    <circle cx="22" cy="88" r="4.5" />
-                                    <circle cx="193" cy="97" r="4.5" />
-                                    <circle cx="364" cy="106" r="4.5" />
-                                    <circle cx="535" cy="114" r="4.5" />
-                                    <circle cx="706" cy="119" r="4.5" />
-                                    <circle cx="877" cy="128" r="4.5" />
-                                </g>
-                                <g fill="#858e88" font-family="system-ui, sans-serif" font-size="11"
-                                    text-anchor="middle">
-                                    <text x="22" y="270">10d</text>
-                                    <text x="193" y="270">20d</text>
-                                    <text x="364" y="270">30d</text>
-                                    <text x="535" y="270">40d</text>
-                                    <text x="706" y="270">50d</text>
-                                    <text x="877" y="270">60d</text>
-                                </g>
-                            </svg>
-                            <div class="flex justify-between px-3 text-[11px] text-[#8a928d]">
-                                <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+                        <div id="dashboard-chart" class="px-[18px] pb-4 pt-1 sm:px-[22px]">
+                            <div class="grid h-[280px] place-items-center text-center">
+                                <div>
+                                    <p class="font-display text-xl">No retention history</p>
+                                    <p class="mt-1 text-sm text-muted">Complete a recall test to begin charting retention.</p>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -131,7 +94,8 @@
         </div>
     </div>
     <div id="shared-floating-ui"></div>
-    <script src="src/scripts/components.js"></script>
+    <script src="javascripts/logic.js?v=storage-engine-1"></script>
+    <script src="javascripts/main.js?v=ui-storage-1"></script>
 </body>
 
 </html>
