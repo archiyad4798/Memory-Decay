@@ -526,6 +526,197 @@
         }
     }
 
+    async function loadRecallPage() {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        const content = document.querySelector('[data-recall-content]');
+        const empty = document.querySelector('[data-recall-empty]');
+        if (!content || !empty) return;
+        if (!id) {
+            content.hidden = true;
+            empty.hidden = false;
+            return;
+        }
+
+        content.hidden = false;
+        empty.hidden = true;
+        content.innerHTML = loadingMarkup('Loading recall…');
+        try {
+            const concept = await globalThis.MemoryDecayStorage.getConcept(id);
+            if (!concept) {
+                content.hidden = true;
+                empty.hidden = false;
+                return;
+            }
+
+            content.innerHTML = `
+                <p class="text-[11px] font-bold uppercase tracking-[1.5px] text-[#8a928c]">Recall test</p>
+                <h1 class="mt-1 font-display text-3xl">${escapeHtml(concept.title)}</h1>
+                <section data-material-state class="mt-5 rounded-2xl border border-line bg-white p-6">
+                    <div class="flex items-center justify-between"><h2 class="font-display text-xl">Material</h2><span class="rounded-full bg-[#edf0eb] px-2.5 py-1 text-xs font-semibold text-muted">Visible before recall</span></div>
+                    <p class="mt-4 whitespace-pre-wrap rounded-xl bg-[#f7f8f4] p-5 text-sm leading-7 text-muted">${escapeHtml(concept.raw)}</p>
+                    <div class="mt-5 flex justify-end"><button type="button" data-lock-start class="rounded-[10px] bg-sage-dark px-4 py-2.5 text-sm font-medium text-white">Lock and start</button></div>
+                </section>
+                <section data-answer-state hidden class="mt-[18px] rounded-2xl border border-line bg-white p-6">
+                    <label class="grid gap-2 text-xs font-bold" for="answer">Free recall
+                        <textarea id="answer" maxlength="10000" rows="7" placeholder="Write what you remember..." class="resize-none rounded-[10px] border border-line bg-white px-3 py-3 text-sm font-normal outline-none focus:border-sage focus:ring-4 focus:ring-sage/15"></textarea>
+                    </label>
+                    <div class="mt-2 flex justify-between gap-3 text-xs text-muted"><span>Write in your own words</span><span data-character-count aria-live="polite">0 characters</span></div>
+                    <div class="mt-5 flex justify-end"><button type="button" data-submit-recall disabled class="rounded-[10px] bg-sage-dark px-4 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40">Submit recall</button></div>
+                </section>`;
+
+            const material = content.querySelector('[data-material-state]');
+            const answerState = content.querySelector('[data-answer-state]');
+            const lock = content.querySelector('[data-lock-start]');
+            const textarea = content.querySelector('#answer');
+            const count = content.querySelector('[data-character-count]');
+            const submit = content.querySelector('[data-submit-recall]');
+            let unsaved = false;
+
+            lock.addEventListener('click', () => {
+                material.hidden = true;
+                answerState.hidden = false;
+                textarea.focus();
+                showToast('Material locked. Recall in your own words.');
+            });
+
+            textarea.addEventListener('input', () => {
+                const length = textarea.value.length;
+                count.textContent = `${length} character${length === 1 ? '' : 's'}`;
+                submit.disabled = length === 0;
+                unsaved = length > 0;
+            });
+
+            submit.addEventListener('click', async () => {
+                if (!textarea.value.trim()) {
+                    showToast('Enter a recall before submitting.', 'error');
+                    return;
+                }
+                submit.disabled = true;
+                submit.textContent = 'Scoring…';
+                try {
+                    const now = Date.now();
+                    const engine = globalThis.MemoryDecayEngine;
+                    const storage = globalThis.MemoryDecayStorage;
+                    const allTests = await storage.listTests(id);
+                    const scored = engine.scoreRecall(textarea.value, concept);
+                    const test = await storage.addTest({
+                        conceptId: id,
+                        at: now,
+                        score: scored.score,
+                        answer: textarea.value
+                    });
+                    const reviewedCount = allTests.length + 1;
+                    const updatedDecay = engine.updateDecay(concept, test, now);
+                    const scheduled = engine.scheduleNext(updatedDecay, reviewedCount, now);
+                    scheduled.state = engine.classify(scheduled, [...allTests, test]);
+                    await storage.updateConcept(scheduled);
+                    unsaved = false;
+                    window.location.href = `result.html?id=${encodeURIComponent(id)}&test=${encodeURIComponent(test.id)}`;
+                } catch (error) {
+                    submit.disabled = false;
+                    submit.textContent = 'Submit recall';
+                    showToast(storageErrorMessage(error), 'error');
+                }
+            });
+
+            document.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', event => {
+                    if (!unsaved) return;
+                    event.preventDefault();
+                    openConfirmDialog({
+                        title: 'Leave this recall?',
+                        description: 'Your unsaved recall will be discarded.',
+                        acceptLabel: 'Leave',
+                        onAccept: () => { window.location.href = link.href; }
+                    });
+                });
+            });
+            window.addEventListener('beforeunload', event => {
+                if (!unsaved) return;
+                event.preventDefault();
+                event.returnValue = '';
+            });
+        } catch (error) {
+            content.hidden = false;
+            empty.hidden = true;
+            content.innerHTML = errorMarkup(storageErrorMessage(error));
+            showToast(storageErrorMessage(error), 'error');
+        }
+    }
+
+    function openConfirmDialog(options) {
+        const dialog = openDialog(
+            options.title,
+            options.description,
+            `<div class="mt-5 flex justify-end gap-2">
+                <button type="button" data-dialog-close class="rounded-[10px] border border-line bg-white px-4 py-2.5 text-sm font-medium hover:bg-soft">Cancel</button>
+                <button type="button" data-confirm-accept class="rounded-[10px] bg-sage-dark px-4 py-2.5 text-sm font-medium text-white">${options.acceptLabel || 'Confirm'}</button>
+            </div>`
+        );
+        dialog.querySelector('[data-confirm-accept]').addEventListener('click', () => {
+            closeDialog(dialog);
+            if (typeof options.onAccept === 'function') options.onAccept();
+        });
+    }
+
+    async function loadResultPage() {
+        const params = new URLSearchParams(window.location.search);
+        const testId = params.get('test');
+        const conceptId = params.get('id');
+        const content = document.querySelector('[data-result-content]');
+        const empty = document.querySelector('[data-result-empty]');
+        if (!content || !empty) return;
+        if (!testId || !conceptId) {
+            content.hidden = true;
+            empty.hidden = false;
+            return;
+        }
+        content.hidden = false;
+        empty.hidden = true;
+        content.innerHTML = loadingMarkup('Loading result…');
+        try {
+            const [concept, tests] = await Promise.all([
+                globalThis.MemoryDecayStorage.getConcept(conceptId),
+                globalThis.MemoryDecayStorage.listTests(conceptId)
+            ]);
+            const test = tests.find(item => item.id === testId);
+            if (!concept || !test) {
+                content.hidden = true;
+                empty.hidden = false;
+                return;
+            }
+            const engine = globalThis.MemoryDecayEngine;
+            const state = engine.classify(concept, tests);
+            const stateClass = state === 'stable'
+                ? 'bg-[#dfeee1] text-[#42624a]'
+                : state === 'at-risk'
+                    ? 'bg-[#f4dfdc] text-[#87554e]'
+                    : state === 'reinforcement-needed'
+                        ? 'bg-[#f5ead5] text-[#82633b]'
+                        : 'bg-[#edf0eb] text-muted';
+            content.innerHTML = `
+                <section class="rounded-2xl border border-line bg-white p-6">
+                    <p class="text-[11px] font-bold uppercase tracking-[1.5px] text-[#8a928c]">Recall result</p>
+                    <div class="mt-3 flex flex-wrap items-end justify-between gap-3">
+                        <div><h1 class="font-display text-4xl">${test.score}% recall</h1><p class="mt-2 text-sm text-muted">${escapeHtml(concept.title)}</p></div>
+                        <span class="rounded-full px-3 py-1.5 text-xs font-semibold ${stateClass}">${escapeHtml(state.replaceAll('-', ' '))}</span>
+                    </div>
+                    <div class="mt-6 h-[7px] overflow-hidden rounded-full bg-[#edf0eb]"><div class="h-full rounded-full bg-sage" style="width:${test.score}%"></div></div>
+                    <div class="mt-6 grid gap-3 rounded-xl bg-[#f7f8f4] p-4 text-sm sm:grid-cols-2">
+                        <div><span class="block text-muted">Score</span><strong class="mt-1 block">${test.score}%</strong></div>
+                        <div><span class="block text-muted">Next review</span><strong class="mt-1 block">${escapeHtml(engine.relativeDueLabel(concept.nextReviewAt, Date.now()))}</strong></div>
+                    </div>
+                    <div class="mt-6 flex flex-wrap justify-end gap-2"><a href="concept.html?id=${encodeURIComponent(concept.id)}" class="rounded-[10px] border border-line bg-white px-4 py-2.5 text-sm font-medium">View concept</a><a href="../../index.html" class="rounded-[10px] bg-sage-dark px-4 py-2.5 text-sm font-medium text-white">Dashboard</a></div>
+                </section>`;
+        } catch (error) {
+            content.hidden = false;
+            empty.hidden = true;
+            content.innerHTML = errorMarkup(storageErrorMessage(error));
+            showToast(storageErrorMessage(error), 'error');
+        }
+    }
+
     const root = document.body.dataset.root || '.';
     const active = document.body.dataset.active || 'dashboard';
     const pagePath = name => name ? `${root}/src/pages/${name}.html` : `${root}/index.html`;
@@ -576,25 +767,168 @@
         if (document.body.dataset.active === 'dashboard') loadDashboardPage();
         if (document.body.dataset.page === 'concepts') loadConceptsPage();
         if (document.body.dataset.page === 'concept') loadConceptDetail();
+        if (document.body.dataset.page === 'recall') loadRecallPage();
+        if (document.body.dataset.page === 'result') loadResultPage();
     });
+
+    let crossTabPromptShown = false;
+    function showReloadPrompt(message) {
+        if (crossTabPromptShown) return;
+        crossTabPromptShown = true;
+        showToast(message, 'error');
+        openConfirmDialog({
+            title: 'Reload required',
+            description: message,
+            acceptLabel: 'Reload',
+            onAccept: () => window.location.reload()
+        });
+    }
+    if (globalThis.MemoryDecayStorage) {
+        globalThis.MemoryDecayStorage.onVersionChange(() => {
+            showReloadPrompt('Another tab changed the database schema. Reload to continue safely.');
+        });
+        globalThis.MemoryDecayStorage.onUpgradeBlocked(() => {
+            showReloadPrompt('A database upgrade is blocked by another tab. Close older tabs and reload.');
+        });
+        if ('BroadcastChannel' in globalThis) {
+            const channel = new BroadcastChannel('memory-decay-data');
+            let broadcasting = false;
+            channel.addEventListener('message', event => {
+                if (event.data !== 'changed') return;
+                broadcasting = true;
+                if (document.body.dataset.active === 'dashboard') loadDashboardPage();
+                if (document.body.dataset.page === 'concepts') loadConceptsPage();
+                if (document.body.dataset.page === 'concept') loadConceptDetail();
+                if (document.body.dataset.page === 'recall') loadRecallPage();
+                if (document.body.dataset.page === 'result') loadResultPage();
+                queueMicrotask(() => { broadcasting = false; });
+            });
+            window.addEventListener('memory-decay-data-changed', () => {
+                if (broadcasting) return;
+                channel.postMessage('changed');
+            });
+        }
+    }
 
     const page = document.body.dataset.page;
     if (document.body.dataset.active === 'dashboard') loadDashboardPage();
     if (page === 'concepts') loadConceptsPage();
     if (page === 'concept') loadConceptDetail();
+    if (page === 'recall') loadRecallPage();
+    if (page === 'result') loadResultPage();
+    if (page === 'recall') loadRecallPage();
+    if (page === 'result') loadResultPage();
     if (page === 'settings') {
-        fetch(`${root}/package.json`)
-            .then(response => {
-                if (!response.ok) throw new Error('Unable to read app version.');
-                return response.json();
-            })
-            .then(metadata => {
-                const target = document.querySelector('[data-app-version]');
-                if (target) target.textContent = String(metadata.version || 'Unavailable');
-            })
-            .catch(() => {
-                const target = document.querySelector('[data-app-version]');
-                if (target) target.textContent = 'Unavailable';
+        const settingsCard = document.querySelector('main');
+        if (settingsCard) {
+            settingsCard.insertAdjacentHTML('beforeend', `
+                <section class="mt-4 max-w-2xl rounded-2xl border border-line bg-white p-5">
+                    <h2 class="font-display text-xl">Data</h2>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <button type="button" data-export-data class="rounded-[10px] border border-line bg-white px-4 py-2.5 text-sm font-medium hover:bg-soft">Export JSON</button>
+                        <button type="button" data-import-data class="rounded-[10px] border border-line bg-white px-4 py-2.5 text-sm font-medium hover:bg-soft">Import JSON</button>
+                        <button type="button" data-reset-data class="rounded-[10px] border border-[#e2b8b1] bg-white px-4 py-2.5 text-sm font-medium text-[#87554e]">Reset all data</button>
+                    </div>
+                    <p data-persistence-status class="mt-4 text-sm text-muted" aria-live="polite">Checking storage persistence…</p>
+                </section>
+                <input type="file" data-import-file accept=".json,application/json" hidden />`);
+
+            fetch(`${root}/package.json`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Unable to read app version.');
+                    return response.json();
+                })
+                .then(metadata => {
+                    const target = document.querySelector('[data-app-version]');
+                    if (target) target.textContent = String(metadata.version || 'Unavailable');
+                })
+                .catch(() => {
+                    const target = document.querySelector('[data-app-version]');
+                    if (target) target.textContent = 'Unavailable';
+                });
+
+            const persistenceStatus = document.querySelector('[data-persistence-status]');
+            globalThis.MemoryDecayStorage.persistStorage()
+                .then(result => {
+                    persistenceStatus.textContent = result.supported
+                        ? result.persisted
+                            ? 'Persistent storage is enabled.'
+                            : 'Persistent storage was not granted. Browser data may be cleared under pressure.'
+                        : 'Persistent storage is not supported by this browser.';
+                })
+                .catch(error => {
+                    persistenceStatus.textContent = storageErrorMessage(error);
+                });
+
+            document.querySelector('[data-export-data]').addEventListener('click', async () => {
+                try {
+                    const json = await globalThis.MemoryDecayStorage.exportAll();
+                    const blob = new Blob([json], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `memory-decay-${new Date().toISOString().slice(0, 10)}.json`;
+                    document.body.append(link);
+                    link.click();
+                    link.remove();
+                    URL.revokeObjectURL(url);
+                    showToast('Workspace exported.');
+                } catch (error) {
+                    showToast(storageErrorMessage(error), 'error');
+                }
             });
+
+            const fileInput = document.querySelector('[data-import-file]');
+            document.querySelector('[data-import-data]').addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', async () => {
+                const file = fileInput.files[0];
+                if (!file) return;
+                if (!file.name.toLowerCase().endsWith('.json') && file.type !== 'application/json') {
+                    showToast('Choose a valid JSON export file.', 'error');
+                    fileInput.value = '';
+                    return;
+                }
+                try {
+                    const text = await file.text();
+                    JSON.parse(text);
+                    openConfirmDialog({
+                        title: 'Import workspace?',
+                        description: 'Importing replaces concepts, tests, settings, and metadata in this browser.',
+                        acceptLabel: 'Import',
+                        onAccept: async () => {
+                            try {
+                                await globalThis.MemoryDecayStorage.importAll(text);
+                                showToast('Workspace imported successfully.');
+                                window.dispatchEvent(new CustomEvent('memory-decay-data-changed'));
+                            } catch (error) {
+                                showToast(storageErrorMessage(error), 'error');
+                            } finally {
+                                fileInput.value = '';
+                            }
+                        }
+                    });
+                } catch (error) {
+                    showToast('Import is not valid JSON.', 'error');
+                    fileInput.value = '';
+                }
+            });
+
+            document.querySelector('[data-reset-data]').addEventListener('click', () => {
+                openConfirmDialog({
+                    title: 'Reset all data?',
+                    description: 'This permanently removes concepts, tests, settings, and metadata from this browser.',
+                    acceptLabel: 'Reset',
+                    onAccept: async () => {
+                        try {
+                            await globalThis.MemoryDecayStorage.resetAll();
+                            showToast('Workspace reset successfully.');
+                            window.dispatchEvent(new CustomEvent('memory-decay-data-changed'));
+                        } catch (error) {
+                            showToast(storageErrorMessage(error), 'error');
+                        }
+                    }
+                });
+            });
+        }
     }
 }());
