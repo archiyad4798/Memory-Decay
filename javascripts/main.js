@@ -832,19 +832,8 @@
                 </section>
                 <input type="file" data-import-file accept=".json,application/json" hidden />`);
 
-            fetch(`${root}/package.json`)
-                .then(response => {
-                    if (!response.ok) throw new Error('Unable to read app version.');
-                    return response.json();
-                })
-                .then(metadata => {
-                    const target = document.querySelector('[data-app-version]');
-                    if (target) target.textContent = String(metadata.version || 'Unavailable');
-                })
-                .catch(() => {
-                    const target = document.querySelector('[data-app-version]');
-                    if (target) target.textContent = 'Unavailable';
-                });
+            const versionTarget = document.querySelector('[data-app-version]');
+            if (versionTarget) versionTarget.textContent = __APP_VERSION__;
 
             const persistenceStatus = document.querySelector('[data-persistence-status]');
             globalThis.MemoryDecayStorage.persistStorage()
