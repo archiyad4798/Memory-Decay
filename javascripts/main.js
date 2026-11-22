@@ -329,14 +329,19 @@
             const dueConcepts = engine.getDue(concepts, tests, now);
 
             if (due) {
-                due.innerHTML = dueConcepts.length
-                    ? dueConcepts.map(concept => `
+                if (dueConcepts.length) {
+                    due.innerHTML = dueConcepts.map(concept => `
                         <a href="src/pages/concept.html?id=${encodeURIComponent(concept.id)}" class="flex w-full items-center justify-between border-b border-[#eef0ec] py-2.5 text-left last:border-0">
                             <span><strong class="block text-[13px]">${escapeHtml(concept.title)}</strong><span class="mt-0.5 block text-[11px] text-[#8a928d]">${escapeHtml(engine.relativeDueLabel(concept.nextReviewAt, now))}</span></span>
                             <span class="text-xs text-sage-dark">${latestScore(concept, tests)}% ›</span>
-                        </a>`).join('')
-                    : `<div class="py-3 text-sm text-muted">No concepts due.</div>
-                       <button type="button" data-popup="add" class="mt-2 text-xs font-semibold text-sage-dark">Add your first concept</button>`;
+                        </a>`).join('');
+                } else if (!concepts.length) {
+                    due.innerHTML = `<div class="py-3 text-sm text-muted">No concepts due.</div>
+                        <button type="button" data-popup="add" class="mt-2 text-xs font-semibold text-sage-dark">Add your first concept</button>`;
+                } else {
+                    const nextReviewAt = Math.min(...concepts.map(concept => concept.nextReviewAt).filter(Number.isFinite));
+                    due.innerHTML = `<div class="py-3 text-sm text-muted"><strong class="block text-ink">Nothing due</strong><span class="mt-1 block">Next review ${escapeHtml(engine.relativeDueLabel(nextReviewAt, now))}</span></div>`;
+                }
             }
 
             if (status) {
