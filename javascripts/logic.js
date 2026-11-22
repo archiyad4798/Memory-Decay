@@ -493,3 +493,274 @@ const MemoryDecayStorage = (() => {
 })();
 
 globalThis.MemoryDecayStorage = MemoryDecayStorage;
+
+const MemoryDecayEngine = (() => {
+    'use strict';
+
+    const SCORE_WEIGHTS = Object.freeze({
+        keyword: 0.40,
+        overlap: 0.30,
+        cosine: 0.30
+    });
+    const TARGET_RETENTION = 0.70;
+    const MIN_INTERVAL_MS = 60 * 60 * 1000;
+    const MAX_INTERVAL_MS = 180 * 24 * 60 * 60 * 1000;
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const STOP_WORDS = new Set([
+        'a', 'an', 'and', 'are', 'as', 'at', 'be', 'but', 'by', 'for',
+        'from', 'has', 'have', 'he', 'her', 'his', 'in', 'is', 'it',
+        'its', 'of', 'on', 'or', 'she', 'that', 'the', 'their', 'them',
+        'this', 'to', 'was', 'we', 'with', 'you'
+    ]);
+
+    function normalizeText(value) {
+        if (typeof value !== 'string') return '';
+        return value
+            .normalize('NFKC')
+            .toLowerCase()
+            .replace(/[^\p{L}\p{N}]+/gu, ' ')
+            .trim()
+            .slice(0, 10000);
+    }
+
+    function tokenize(value) {
+        const normalized = normalizeText(value);
+        if (!normalized) return [];
+        return normalized
+            .split(/\s+/)
+            .filter(token => token.length > 1)
+            .slice(0, 5000)
+            .filter(token => !STOP_WORDS.has(token));
+    }
+
+    function unique(values) {
+        return [...new Set(values)];
+    }
+
+    function escapeRegExp(value) {
+        return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function keywordMatches(answer, keywords) {
+        const normalizedAnswer = normalizeText(answer);
+        const normalizedKeywords = unique((Array.isArray(keywords) ? keywords : [])
+            .map(keyword => normalizeText(keyword))
+            .filter(Boolean));
+
+        if (!normalizedAnswer || !normalizedKeywords.length) {
+            return { matched: [], total: normalizedKeywords.length };
+        }
+
+        const matched = normalizedKeywords.filter(keyword => {
+            const pattern = `(?:^|\\s)${escapeRegExp(keyword).replace(/\\s+/g, '\\\\s+')}(?=$|\\s)`;
+            return new RegExp(pattern, 'u').test(normalizedAnswer);
+        });
+        return { matched, total: normalizedKeywords.length };
+    }
+
+    function tokenOverlap(answer, reference) {
+        const answerTokens = unique(tokenize(answer));
+        const referenceTokens = unique(tokenize(reference));
+        if (!answerTokens.length || !referenceTokens.length) return 0;
+        const referenceSet = new Set(referenceTokens);
+        const overlap = answerTokens.filter(token => referenceSet.has(token)).length;
+        return overlap / referenceTokens.length;
+    }
+
+    function cosineSimilarity(answer, reference) {
+        const answerTokens = tokenize(answer);
+        const referenceTokens = tokenize(reference);
+        if (!answerTokens.length || !referenceTokens.length) return 0;
+
+        const answerVector = new Map();
+        const referenceVector = new Map();
+        for (const token of answerTokens) answerVector.set(token, (answerVector.get(token) || 0) + 1);
+        for (const token of referenceTokens) referenceVector.set(token, (referenceVector.get(token) || 0) + 1);
+
+        const terms = new Set([...answerVector.keys(), ...referenceVector.keys()]);
+        let dot = 0;
+        let answerMagnitude = 0;
+        let referenceMagnitude = 0;
+        for (const term of terms) {
+            const answerValue = answerVector.get(term) || 0;
+            const referenceValue = referenceVector.get(term) || 0;
+            dot += answerValue * referenceValue;
+            answerMagnitude += answerValue * answerValue;
+            referenceMagnitude += referenceValue * referenceValue;
+        }
+        const magnitude = Math.sqrt(answerMagnitude) * Math.sqrt(referenceMagnitude);
+        return magnitude ? dot / magnitude : 0;
+    }
+
+    function scoreRecall(answer, concept) {
+        if (typeof answer !== 'string' || !answer.trim()) {
+            return {
+                score: 0,
+                keywordScore: 0,
+                overlapScore: 0,
+                cosineScore: 0,
+                matchedKeywords: [],
+                totalKeywords: Array.isArray(concept?.keywords) ? concept.keywords.length : 0
+            };
+        }
+
+        const keywords = Array.isArray(concept?.keywords) ? concept.keywords : [];
+        const reference = [concept?.title || '', concept?.raw || '', ...keywords].filter(Boolean).join(' ');
+        const keywordResult = keywordMatches(answer, keywords);
+        const keywordScore = keywordResult.total ? keywordResult.matched.length / keywordResult.total : 0;
+        const overlapScore = tokenOverlap(answer, reference);
+        const cosineScore = cosineSimilarity(answer, reference);
+        const weighted =
+            keywordScore * SCORE_WEIGHTS.keyword +
+            overlapScore * SCORE_WEIGHTS.overlap +
+            cosineScore * SCORE_WEIGHTS.cosine;
+        const score = Math.max(0, Math.min(100, Math.round(weighted * 100)));
+
+        return {
+            score,
+            keywordScore: Math.round(keywordScore * 100),
+            overlapScore: Math.round(overlapScore * 100),
+            cosineScore: Math.round(cosineScore * 100),
+            matchedKeywords: keywordResult.matched,
+            totalKeywords: keywordResult.total
+        };
+    }
+
+    function updateDecay(concept, test, now) {
+        if (!concept || typeof concept !== 'object') throw new TypeError('Concept is required.');
+        if (!test || typeof test !== 'object') throw new TypeError('Test is required.');
+        if (!Number.isFinite(now)) throw new TypeError('now must be a finite timestamp.');
+
+        const previous = Number.isFinite(concept.decayRate) ? concept.decayRate : 0.3;
+        const score = Number.isFinite(test.score) ? Math.max(0, Math.min(100, test.score)) / 100 : 0;
+        const adjusted = previous * (1 - score * 0.35) + (1 - score) * 0.12;
+        const decayRate = Math.max(0.05, Math.min(1.5, adjusted));
+        return { ...concept, decayRate, lastTestAt: now };
+    }
+
+    function projectedRetention(concept, elapsedMs) {
+        const decayRate = Number.isFinite(concept?.decayRate) ? Math.max(0.05, concept.decayRate) : 0.3;
+        const elapsedDays = Math.max(0, elapsedMs) / DAY_MS;
+        return Math.exp(-decayRate * elapsedDays);
+    }
+
+    function scheduleNext(concept, testCount, now) {
+        if (!concept || typeof concept !== 'object') throw new TypeError('Concept is required.');
+        if (!Number.isFinite(now)) throw new TypeError('now must be a finite timestamp.');
+        const count = Math.max(0, Number(testCount) || 0);
+        const decayRate = Number.isFinite(concept.decayRate) ? Math.max(0.05, concept.decayRate) : 0.3;
+        const countBonus = count === 0 ? 1 : Math.pow(1.5, Math.min(count, 12));
+        let low = MIN_INTERVAL_MS;
+        let high = MAX_INTERVAL_MS;
+        let interval = Math.max(MIN_INTERVAL_MS, Math.min(MAX_INTERVAL_MS, MIN_INTERVAL_MS * countBonus));
+        for (let step = 0; step < 48; step += 1) {
+            const retention = projectedRetention({ decayRate }, interval);
+            if (retention > TARGET_RETENTION) {
+                low = interval;
+                interval = (interval + high) / 2;
+            } else {
+                high = interval;
+                interval = (low + interval) / 2;
+            }
+        }
+        const candidates = [low, high, interval, MIN_INTERVAL_MS, MAX_INTERVAL_MS];
+        interval = candidates.reduce((best, candidate) => {
+            const candidateDistance = Math.abs(projectedRetention({ decayRate }, candidate) - TARGET_RETENTION);
+            const bestDistance = Math.abs(projectedRetention({ decayRate }, best) - TARGET_RETENTION);
+            return candidateDistance < bestDistance ? candidate : best;
+        }, interval);
+        return { ...concept, nextReviewAt: now + interval };
+    }
+
+    function classify(concept, tests) {
+        const reviewCount = Array.isArray(tests)
+            ? tests.filter(test => test && test.conceptId === concept?.id).length
+            : 0;
+        if (reviewCount < 2) return 'new';
+        const conceptTests = Array.isArray(tests)
+            ? tests.filter(test => test && test.conceptId === concept?.id && Number.isFinite(test.score))
+                .sort((a, b) => (b.at || 0) - (a.at || 0))
+            : [];
+        const latest = conceptTests.length
+            ? conceptTests[0].score
+            : Number.isFinite(concept?.score) ? concept.score : 0;
+        if (latest >= 80) return 'stable';
+        if (latest >= 60) return 'reinforcement-needed';
+        return 'at-risk';
+    }
+
+    function getDue(concepts, tests, now) {
+        if (!Number.isFinite(now)) throw new TypeError('now must be a finite timestamp.');
+        const items = Array.isArray(concepts) ? concepts : [];
+        return items.filter(concept =>
+            Number.isFinite(concept.nextReviewAt) && concept.nextReviewAt <= now
+        ).sort((a, b) => a.nextReviewAt - b.nextReviewAt);
+    }
+
+    function averageRetention(tests) {
+        const items = Array.isArray(tests) ? tests.filter(test => test && Number.isFinite(test.score)) : [];
+        if (!items.length) return 0;
+        return Math.round(items.reduce((sum, test) => sum + test.score, 0) / items.length);
+    }
+
+    function retentionHistory(days, tests, now) {
+        if (!Number.isFinite(now)) throw new TypeError('now must be a finite timestamp.');
+        const count = Math.max(1, Math.min(365, Math.floor(Number(days) || 1)));
+        const items = Array.isArray(tests) ? tests : [];
+        const buckets = [];
+        for (let index = count - 1; index >= 0; index -= 1) {
+            const end = now - index * DAY_MS;
+            const start = end - DAY_MS;
+            const bucket = items.filter(test =>
+                Number.isFinite(test.at) && test.at >= start && test.at < end && Number.isFinite(test.score)
+            );
+            buckets.push({
+                at: end,
+                average: bucket.length
+                    ? Math.round(bucket.reduce((sum, test) => sum + test.score, 0) / bucket.length)
+                    : 0,
+                count: bucket.length
+            });
+        }
+        return buckets;
+    }
+
+    function reviewsCompleted(tests) {
+        return Array.isArray(tests) ? tests.length : 0;
+    }
+
+    function relativeDueLabel(nextReviewAt, now) {
+        if (!Number.isFinite(nextReviewAt) || !Number.isFinite(now)) return 'Unknown';
+        const difference = nextReviewAt - now;
+        if (difference <= 0) return 'Today';
+        if (difference < 60 * 60 * 1000) {
+            return `In ${Math.max(1, Math.ceil(difference / (60 * 1000)))} min`;
+        }
+        if (difference < DAY_MS) {
+            return `In ${Math.max(1, Math.ceil(difference / (60 * 60 * 1000)))} hr`;
+        }
+        const days = Math.ceil(difference / DAY_MS);
+        return days === 1 ? 'Tomorrow' : `In ${days} days`;
+    }
+
+    return Object.freeze({
+        SCORE_WEIGHTS,
+        TARGET_RETENTION,
+        MIN_INTERVAL_MS,
+        MAX_INTERVAL_MS,
+        normalizeText,
+        tokenize,
+        scoreRecall,
+        updateDecay,
+        projectedRetention,
+        scheduleNext,
+        classify,
+        getDue,
+        averageRetention,
+        retentionHistory,
+        reviewsCompleted,
+        relativeDueLabel
+    });
+})();
+
+globalThis.MemoryDecayEngine = MemoryDecayEngine;
