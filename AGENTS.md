@@ -13,7 +13,8 @@ framework.
 - `app.css`: compiled Tailwind output. Never edit this file by hand.
 - `tailwind.config.js`: theme configuration for paper, ink, muted, line, soft,
   sage, sage-dark, `shadow-app`, and the Georgia display font.
-- `src/scripts/`: shared static UI scripts and components.
+- `javascripts/main.js`: all UI behavior, shared components, dialogs, toasts, and views.
+- `javascripts/logic.js`: engine only. No DOM access.
 - `src/pages/`: static application pages.
 - `references/`: read-only reference containing the old prototype
   (`index.html`, `app.js`, `logic.js`, and `style.css`). It is gitignored.
@@ -32,3 +33,12 @@ framework.
 - Explain each implementation step briefly before making changes.
 - Keep commits small and focused.
 - Do not expand scope beyond the active prompt.
+
+## File ownership (do not create parallel files)
+
+- javascripts/logic.js: engine only (scoring, scheduling, storage). No DOM.
+- javascripts/main.js: all UI behavior (navigation, forms, dialogs, toasts, views).
+- src/pages/\*.html and src/components/: markup only.
+- Before creating ANY new .js file, check whether the code belongs in
+  logic.js or main.js. Only create a new file if I explicitly ask.
+- If a file I did not mention exists, ask me before deleting or merging it.

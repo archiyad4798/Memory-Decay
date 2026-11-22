@@ -29,7 +29,6 @@ The dashboard follows the approved prototype layout:
 | Concept detail | `/src/pages/concept.html` |
 | Recall test | `/src/pages/recall.html` |
 | Recall result | `/src/pages/result.html` |
-| Add concept | `/src/pages/add-concept.html` |
 | Settings | `/src/pages/settings.html` |
 | Notifications | `/src/pages/notifications.html` |
 | Profile | `/src/pages/profile.html` |
@@ -42,16 +41,17 @@ input.css                  Tailwind source stylesheet
 app.css                    Compiled Tailwind output
 tailwind.config.js         Theme and content scanning
 src/
-  scripts/
-    components.js         Shared header, sidebar, and floating add button
   pages/                   Static application pages
+javascripts/
+  main.js                  Shared UI behavior
+  logic.js                 Engine, currently untouched
 references/                Gitignored read-only prototype
 ```
 
 ## Shared shell
 
-[components.js](/Users/ntggamer1/Desktop/NTgGamer1/Hackathons/Memory-Decay/src/scripts/components.js)
-injects the shared header and sidebar into every page. Each page declares its
+[main.js](/Users/ntggamer1/Desktop/NTgGamer1/Hackathons/Memory-Decay/javascripts/main.js)
+injects the shared header and sidebar and owns all UI behavior. Each page declares its
 active navigation state through `data-active` on `<body>`. Header links and
 sidebar links use relative paths that resolve from both the root dashboard and
 pages below `src/pages`.
