@@ -1,15 +1,25 @@
 {
   "name": "memory-decay",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
-    "build": "tailwindcss -i ./input.css -o ./app.css --minify",
-    "test": "npm run build && test -s ./app.css",
-    "dev": "tailwindcss -i ./input.css -o ./app.css --watch"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "devDependencies": {
     "autoprefixer": "^10.7.0",
+    "esbuild": "^0.28.2",
+    "fake-indexeddb": "^6.2.4",
     "postcss": "^8.5.33",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^3.4.19",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
   }
 }

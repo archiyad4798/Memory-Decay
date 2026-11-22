@@ -748,6 +748,7 @@ const MemoryDecayEngine = (() => {
         TARGET_RETENTION,
         MIN_INTERVAL_MS,
         MAX_INTERVAL_MS,
+        DAY_MS,
         normalizeText,
         tokenize,
         scoreRecall,

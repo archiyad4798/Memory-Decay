@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#fbfaf5"/>
+  <circle cx="600" cy="315" r="180" fill="#405447"/>
+  <circle cx="600" cy="315" r="130" fill="#fbfaf5"/>
+  <path d="M600 185a130 130 0 1092 222M600 185v130h130" fill="none" stroke="#405447" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="600" y="555" text-anchor="middle" font-family="Georgia,serif" font-size="54" fill="#1f2724">Memory Decay</text>
+</svg>
