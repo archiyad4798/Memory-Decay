@@ -14,14 +14,11 @@
                     <p class="text-[11px] font-bold uppercase tracking-[1.5px] text-[#8a928c]">Workspace</p>
                     <h1 class="mt-1 font-display text-3xl">Settings</h1>
                     <section class="mt-6 rounded-2xl border border-line bg-white p-5">
-                        <h2 class="font-display text-xl">Review preferences</h2>
-                        <div class="mt-5 grid gap-4">
-                            <label class="flex items-center justify-between gap-4 border-b border-[#eef0ec] pb-4 text-sm"><span><b class="block">Daily reminders</b><small class="mt-1 block text-muted">Notify when concepts are due</small></span><input type="checkbox" checked class="size-4 accent-[#405447]" /></label>
-                            <label class="flex items-center justify-between gap-4 border-b border-[#eef0ec] pb-4 text-sm"><span><b class="block">Show recall hints</b><small class="mt-1 block text-muted">Display keywords after a missed recall</small></span><input type="checkbox" class="size-4 accent-[#405447]" /></label>
-                            <label class="flex items-center justify-between gap-4 border-b border-[#eef0ec] pb-4 text-sm"><span><b class="block">Demo mode</b><small class="mt-1 block text-muted">Enable a fast-forward clock for testing</small></span><input data-demo-toggle type="checkbox" role="switch" class="size-4 accent-[#405447]" /></label>
-                            <div class="flex flex-wrap justify-between gap-3 text-sm"><div><b class="block">Backup</b><small class="mt-1 block text-muted">Export or import workspace data</small></div><div class="flex gap-2"><button type="button" data-export class="rounded-[10px] border border-line px-3 py-2">Export</button><button type="button" data-import class="rounded-[10px] border border-line px-3 py-2">Import</button></div></div>
-                            <div class="flex items-center justify-between gap-4 pt-1 text-sm"><span><b class="block text-[#87554e]">Reset workspace</b><small class="mt-1 block text-muted">Remove concepts and review history</small></span><button type="button" data-reset class="rounded-[10px] border border-[#e2b8b1] px-3 py-2 text-[#87554e]">Reset</button></div>
-                        </div>
+                        <h2 class="font-display text-xl">About</h2>
+                        <dl class="mt-4 grid gap-3 text-sm">
+                            <div class="flex justify-between gap-4 border-b border-[#eef0ec] pb-3"><dt class="text-muted">App</dt><dd class="font-semibold">Memory Decay</dd></div>
+                            <div class="flex justify-between gap-4"><dt class="text-muted">Version</dt><dd data-app-version class="font-semibold">Loading</dd></div>
+                        </dl>
                     </section>
                 </div>
             </main>

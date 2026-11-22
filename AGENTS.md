@@ -2,9 +2,9 @@
 
 ## Project
 
-Memory Decay is a spaced-repetition web app built with vanilla JavaScript,
-Tailwind CSS 3.4 and PostCSS. It uses `localStorage` and has no backend or
-framework.
+Memory Decay is a final spaced-repetition web app built with vanilla JavaScript,
+Tailwind CSS 3.4 and PostCSS. It uses IndexedDB in the user's browser and has
+no backend or framework.
 
 ## Structure
 
@@ -14,18 +14,18 @@ framework.
 - `tailwind.config.js`: theme configuration for paper, ink, muted, line, soft,
   sage, sage-dark, `shadow-app`, and the Georgia display font.
 - `javascripts/main.js`: all UI behavior, shared components, dialogs, toasts, and views.
-- `javascripts/logic.js`: engine only. No DOM access.
+- `javascripts/logic.js`: engine, scheduling, scoring, selectors, schema, and storage. No DOM access.
 - `src/pages/`: static application pages.
-- `references/`: read-only reference containing the old prototype
-  (`index.html`, `app.js`, `logic.js`, and `style.css`). It is gitignored.
+- `references/`: read-only legacy files (`index.html`, `app.js`, `logic.js`,
+  and `style.css`). It is gitignored and must not influence implementation.
 
 ## Rules
 
 - Keep the UI pixel-identical to the approved dashboard.
 - Do not copy markup or implementation weaknesses from `references/`.
 - Never commit or add `references/` to version control.
-- Make every time function accept a `now` argument so demo-clock fast-forward
-  can replace the real current time deterministically.
+- Make every time function accept a `now` argument so tests and future clock
+  controls can replace the real current time deterministically.
 - Do not silently catch errors. Surface storage and validation failures clearly.
 - Escape every stored or user-provided value before rendering HTML.
 - Use `npm run build` for a one-shot production CSS build.
