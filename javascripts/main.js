@@ -49,14 +49,14 @@
         dialog.remove();
     }
 
-    function openDialog({ title, description = '', body = '', acceptLabel = 'Confirm', cancelLabel = 'Cancel', destructive = false, onAccept, width = '420px', autofocus = null }) {
+    function openDialog({ title, description = '', body = '', onAccept, width = '420px', autofocus = null, role = 'dialog' }) {
         const existing = document.getElementById('memory-decay-dialog');
         if (existing) existing.remove();
         lastDialogTrigger = document.activeElement;
         const dialog = document.createElement('dialog');
         dialog.id = 'memory-decay-dialog';
         dialog.setAttribute('aria-modal', 'true');
-        dialog.setAttribute('role', 'alertdialog');
+        dialog.setAttribute('role', role);
         dialog.setAttribute('aria-labelledby', 'memory-decay-dialog-title');
         dialog.className = `w-[min(${width},calc(100%-32px))] rounded-[20px] border border-line bg-paper p-0 text-ink shadow-2xl backdrop:bg-black/35`;
         dialog.innerHTML = `
@@ -106,6 +106,7 @@
     function openConfirm(options) {
         return openDialog({
             ...options,
+            role: 'alertdialog',
             body: `
 <div class="mt-5 flex justify-end gap-2">
     <button type="button" data-dialog-close class="rounded-[10px] border border-line bg-white px-4 py-2.5 text-sm font-medium hover:bg-soft">${options.cancelLabel || 'Cancel'}</button>
@@ -191,7 +192,7 @@
         const isEdit = mode === 'edit';
         openDialog({
             title: isEdit ? 'Edit concept' : 'Add a concept',
-            description: 'Create a learning item to start tracking recall.',
+            description: isEdit ? 'Update the title, material, and keywords for recall.' : 'Create a learning item to start tracking recall.',
             width: '470px',
             autofocus: '#concept-title',
             body: `
