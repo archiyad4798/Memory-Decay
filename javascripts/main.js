@@ -41,15 +41,17 @@
     }
 
     function closeDialog(dialog) {
-        if (!dialog.open) return;
-        dialog.close();
+        if (dialog.open) dialog.close();
         if (lastDialogTrigger && typeof lastDialogTrigger.focus === 'function') {
             lastDialogTrigger.focus();
         }
         lastDialogTrigger = null;
+        dialog.remove();
     }
 
     function openDialog({ title, description = '', body = '', acceptLabel = 'Confirm', cancelLabel = 'Cancel', destructive = false, onAccept, width = '420px', autofocus = null }) {
+        const existing = document.getElementById('memory-decay-dialog');
+        if (existing) existing.remove();
         lastDialogTrigger = document.activeElement;
         const dialog = document.createElement('dialog');
         dialog.id = 'memory-decay-dialog';
