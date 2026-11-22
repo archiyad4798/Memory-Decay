@@ -73,6 +73,11 @@ npm install
 npm run dev
 ```
 
+**Nikhil Maurya** - Frontend Development & Logic & Core Algorithms
+**Archisa Yadav** - Testing And Bugs Fixing
+**Devansh Gupta** - Research & Presentation
+**Rupanjan Das** - Research & Presentation
+
 ## Production build
 
 ```bash
