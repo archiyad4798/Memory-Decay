@@ -389,11 +389,9 @@
 
     async function loadConceptsPage() {
         const list = document.querySelector('[data-concept-list]');
-        const noConcepts = document.querySelector('[data-concept-empty]:not([data-no-match])');
         const noMatch = document.querySelector('[data-no-match]');
         if (!list) return;
         list.innerHTML = loadingMarkup('Loading concepts…');
-        if (noConcepts) noConcepts.hidden = true;
         if (noMatch) noMatch.hidden = true;
         try {
             const [concepts, tests] = await Promise.all([
@@ -434,18 +432,19 @@
                 if (sort?.value === 'due') visible.sort((a, b) => (a.nextReviewAt || 0) - (b.nextReviewAt || 0));
 
                 if (!concepts.length) {
-                    list.innerHTML = '';
-                    if (noConcepts) noConcepts.hidden = false;
+                    list.innerHTML = `<div class="rounded-2xl border border-dashed border-line bg-white p-8 text-center">
+                        <h2 class="font-display text-xl">No concepts yet</h2>
+                        <p class="mt-2 text-sm text-muted">Add your first concept to begin building recall history.</p>
+                        <button type="button" data-popup="add" class="mt-5 rounded-[10px] bg-sage-dark px-4 py-2.5 text-sm font-medium text-white">Add your first concept</button>
+                    </div>`;
                     if (noMatch) noMatch.hidden = true;
                     return;
                 }
                 if (!visible.length) {
                     list.innerHTML = '';
-                    if (noConcepts) noConcepts.hidden = true;
                     if (noMatch) noMatch.hidden = false;
                     return;
                 }
-                if (noConcepts) noConcepts.hidden = true;
                 if (noMatch) noMatch.hidden = true;
                 list.innerHTML = visible.map(concept => {
                     const [badgeClass, dotClass] = stateStyle(concept.state);
